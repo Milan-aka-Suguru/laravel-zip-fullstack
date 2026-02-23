@@ -32,6 +32,7 @@ export default function Login({ status, canResetPassword }) {
             const result = await response.json();
     
             localStorage.setItem('token', result.token);
+            localStorage.setItem('sessiontoken', result.token);
             localStorage.setItem('user', JSON.stringify(result.user));
             reset('password');
             router.visit('/');

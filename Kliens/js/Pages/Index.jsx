@@ -7,7 +7,11 @@ export default function Index({ auth }) {
     const [counties, setCounties] = useState([]);
     const [countyQuery, setCountyQuery] = useState('');
     const [townQuery, setTownQuery] = useState('');
-    const token = localStorage.getItem('token');
+    const [newCountyName, setNewCountyName] = useState('');
+    const [newTown, setNewTown] = useState({ name: '', zip_code: '', county_id: '' });
+    const [showCounties, setShowCounties] = useState(true);
+    const [showTowns, setShowTowns] = useState(true);
+    const token = localStorage.getItem('token') || localStorage.getItem('sessiontoken');
     console.log(auth)
     useEffect(() => {
         fetch('/api/towns')
@@ -23,6 +27,69 @@ export default function Index({ auth }) {
 
     const handleLogout = () => {
         post('/logout');
+    };
+
+    const handleCreateCounty = async () => {
+      if (!newCountyName.trim()) return;
+
+      try {
+        const res = await fetch('/api/counties', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ name: newCountyName.trim() }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          console.error(data);
+          return;
+        }
+
+        if (data.county) {
+          setCounties((prev) => [...prev, data.county]);
+        }
+        setNewCountyName('');
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    const handleCreateTown = async () => {
+      if (!newTown.name.trim() || !newTown.zip_code.trim() || !newTown.county_id) return;
+
+      try {
+        const res = await fetch('/api/towns', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            name: newTown.name.trim(),
+            zip_code: newTown.zip_code.trim(),
+            county_id: Number(newTown.county_id),
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          console.error(data);
+          return;
+        }
+
+        const townRes = await fetch('/api/towns');
+        const townJson = await townRes.json();
+        setTowns(townJson.towns || []);
+
+        setNewTown({ name: '', zip_code: '', county_id: '' });
+      } catch (err) {
+        console.error(err);
+      }
     };
 
     const exportCSV = (rows, filename, delimiter = ';') => {
@@ -184,7 +251,16 @@ export default function Index({ auth }) {
             )}
 
             {/* Counties Search */}
-            <h2 className="text-xl font-semibold mt-8 mb-2">Megyék</h2>
+            <button
+              type="button"
+              onClick={() => setShowCounties((prev) => !prev)}
+              className="text-xl font-semibold mt-8 mb-2 flex items-center gap-2"
+            >
+              <span>{showCounties ? '▼' : '▶'}</span>
+              <span>Megyék</span>
+            </button>
+            {showCounties && (
+            <>
             <div className="flex items-center gap-2 mb-2">
                 <input
                     type="text"
@@ -205,6 +281,21 @@ export default function Index({ auth }) {
                     disabled={counties.length === 0}
                 >
                     Export CSV
+                </button>
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+                <input
+                    type="text"
+                    placeholder="Új megye neve"
+                    value={newCountyName}
+                    onChange={e => setNewCountyName(e.target.value)}
+                    className="border px-2 py-1 rounded"
+                />
+                <button
+                    onClick={handleCreateCounty}
+                    className="bg-blue-600 text-white px-3 py-1 rounded"
+                >
+                    Megye hozzáadása
                 </button>
             </div>
             <table className="border-collapse border border-gray-300 w-full">
@@ -238,11 +329,22 @@ export default function Index({ auth }) {
     ))}
   </tbody>
 </table>
+        </>
+        )}
 
 
             {/* Towns Search */}
-            <h2 className="text-xl font-semibold mt-8 mb-2">Towns</h2>
-            <div className="flex items-center gap-2 mb-2">
+        <button
+          type="button"
+          onClick={() => setShowTowns((prev) => !prev)}
+          className="text-xl font-semibold mt-8 mb-2 flex items-center gap-2"
+        >
+          <span>{showTowns ? '▼' : '▶'}</span>
+          <span>Towns</span>
+        </button>
+        {showTowns && (
+        <>
+        <div className="flex items-center gap-2 mb-2">
                 <input
                     type="text"
                     placeholder="Keresés..."
@@ -262,6 +364,40 @@ export default function Index({ auth }) {
                     disabled={towns.length === 0}
                 >
                     Export CSV
+                </button>
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+                <input
+                    type="text"
+                    placeholder="Új település neve"
+                    value={newTown.name}
+                    onChange={e => setNewTown(prev => ({ ...prev, name: e.target.value }))}
+                    className="border px-2 py-1 rounded"
+                />
+                <input
+                    type="text"
+                    placeholder="Irányítószám"
+                    value={newTown.zip_code}
+                    onChange={e => setNewTown(prev => ({ ...prev, zip_code: e.target.value }))}
+                    className="border px-2 py-1 rounded"
+                />
+                <select
+                    value={newTown.county_id}
+                    onChange={e => setNewTown(prev => ({ ...prev, county_id: e.target.value }))}
+                    className="border px-2 py-1 rounded"
+                >
+                    <option value="">Válassz megyét</option>
+                    {counties.map((county) => (
+                        <option key={county.id} value={county.id}>
+                        {county.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={handleCreateTown}
+                    className="bg-blue-600 text-white px-3 py-1 rounded"
+                >
+                    Település hozzáadása
                 </button>
             </div>
             <table className="border-collapse border border-gray-300 w-full">
@@ -299,6 +435,8 @@ export default function Index({ auth }) {
     ))}
   </tbody>
 </table>
+            </>
+            )}
 
         </div>
     );

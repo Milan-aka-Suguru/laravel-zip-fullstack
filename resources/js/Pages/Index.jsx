@@ -12,6 +12,8 @@ export default function Index({ auth, counties = [], towns = [] }) {
     const [emailExportModal, setEmailExportModal] = useState({ show: false, type: '', format: '' });
     const [emailAddress, setEmailAddress] = useState('');
     const [exportLoading, setExportLoading] = useState(false);
+    const [showCounties, setShowCounties] = useState(true);
+    const [showTowns, setShowTowns] = useState(true);
     const [townForm, setTownForm] = useState({
         name: '',
         zip_code: '',
@@ -270,7 +272,16 @@ export default function Index({ auth, counties = [], towns = [] }) {
                 )}
             </div>
 
-            <h2 className="text-xl font-semibold mt-8 mb-2">Megyék</h2>
+            <button
+                type="button"
+                onClick={() => setShowCounties((prev) => !prev)}
+                className="text-xl font-semibold mt-8 mb-2 flex items-center gap-2"
+            >
+                <span>{showCounties ? '▼' : '▶'}</span>
+                <span>Megyék</span>
+            </button>
+            {showCounties && (
+            <>
             <div className="flex items-center gap-2 mb-3">
                 <input
                     type="text"
@@ -357,8 +368,19 @@ export default function Index({ auth, counties = [], towns = [] }) {
                     ))}
                 </tbody>
             </table>
+            </>
+            )}
 
-            <h2 className="text-xl font-semibold mt-8 mb-2">Települések</h2>
+            <button
+                type="button"
+                onClick={() => setShowTowns((prev) => !prev)}
+                className="text-xl font-semibold mt-8 mb-2 flex items-center gap-2"
+            >
+                <span>{showTowns ? '▼' : '▶'}</span>
+                <span>Települések</span>
+            </button>
+            {showTowns && (
+            <>
             <div className="flex items-center gap-2 mb-3">
                 <input
                     type="text"
@@ -468,6 +490,8 @@ export default function Index({ auth, counties = [], towns = [] }) {
                     ))}
                 </tbody>
             </table>
+            </>
+            )}
 
             {/* Email Export Modal */}
             {emailExportModal.show && (
